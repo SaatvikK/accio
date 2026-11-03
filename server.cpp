@@ -16,7 +16,7 @@ int main() {
 	// An FD is basically a small bit of information the Linux Kernel stores about
 	// every process.
 	// This FD includes the socket that this program has requested from the kernel.
-	int server_fd, new_socket;
+	int server_fd, newSocket;
 
 	struct sockaddr_in address;
 
@@ -70,25 +70,27 @@ int main() {
 	// If listen() returns a negative num then obv error
 	if(listen(server_fd, 3) < 0) {
 		perror("listen");
-		exit(EXIT_FAILURE)
+		exit(EXIT_FAILURE);
 	}
 
 	std::cout << "Server is listening on port " << PORT << std::endl;
 
 	// Accept incoming connection
-	if((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
+	if((newSocket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
 		perror("accept");
 		exit(EXIT_FAILURE);
 	}
 
 	// Read and echo the received message
-	ssize_t valread = read(new_socket, buffer, BUFFER_SIZE);
+	ssize_t valread = read(newSocket, buffer, BUFFER_SIZE);
 	std::cout << "Received: " << buffer << std::endl;
-	send(new_socket, buffer, valread, 0);
-	std::cout << "Echo message sent" << std::endl;
-	
+	std::string res = "hi from server";
+	//send(newSocket, buffer, res.c_str(), 0);
+	send(newSocket, res.c_str(), res.size(), 0);
+	std::cout << "Response sent" << std::endl;
+
 	// Close the socket
-	close(new_socket);
+	close(newSocket);
 	close(server_fd);
 	return 0;
 }
