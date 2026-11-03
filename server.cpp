@@ -34,15 +34,61 @@ int main() {
 	}
 
 	/*
-
 	The "change a setting on this socket" syscall:
-	 getsockopt reads a setting, 
-	setsockopt writes one. Every socket has a pile of tunable options; this call flips 
-	two bits on the socket you just created.
+	`getsockopt` reads a setting, `setsockopt` writes one. Every socket has a 
+	pile of tunable options; this call flips two bits on the socket you just created.
 
+	Params:
+	- server_fd: Which socket
+	- SOL_SOCKET: Which layer
+	- SOL_REUSEADDR | SO_REUSEPORT: Which option(s) to set
+	- &opt: What values to set them at
 	*/
+
+	// SOL_SOCKET == Generic socket behaviour.
+	// SO_REUSEADR == Lets you use `bind()` to a port that's still lingering from
+	// a previous run
+
+	// Returns `0` on SUCCESS and `-1` on FAILURE
 	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
 		perror("setsockopt");
 		exit(EXIT_FAILURE);
 	}
+
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
+	address.sin_port = htons(PORT);
+
+	// Bind the socket to the network address and port
+
+	if(bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+		perror("bind failed");
+		exit(EXIT_FAILURE);
+	}
+
+	// Start listening for incoming connections
+	// If listen() returns a negative num then obv error
+	if(listen(server_fd, 3) < 0) {
+		perror("listen");
+		exit(EXIT_FAILURE)
+	}
+
+	std::cout << "Server is listening on port " << PORT << std::endl;
+
+	// Accept incoming connection
+	if((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
+		perror("accept");
+		exit(EXIT_FAILURE);
+	}
+
+	// Read and echo the received message
+	ssize_t valread = read(new_socket, buffer, BUFFER_SIZE);
+	std::cout << "Received: " << buffer << std::endl;
+	send(new_socket, buffer, valread, 0);
+	std::cout << "Echo message sent" << std::endl;
+	
+	// Close the socket
+	close(new_socket);
+	close(server_fd);
+	return 0;
 }
